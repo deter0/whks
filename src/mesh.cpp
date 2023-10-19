@@ -16,6 +16,10 @@
 
 #include "mesh.h"
 
+#define DIFFUSE_TEXTURE_UNIFORM "texture_diffuse"
+#define SPECULAR_TEXTURE_UNIFORM "texture_specular"
+#define NORMALS_TEXTURE_UNIFORM "texture_normals"
+
 static std::vector<MeshTexture> loaded_textures;
 
 void setup_mesh(Mesh *mesh) {
@@ -66,6 +70,7 @@ void mesh_delete(Mesh *mesh) {
 void draw_mesh(Mesh *mesh, Shader_Prog shader) {
 	uint num_diffuse = 1;
 	uint num_spec = 1;
+	uint num_norm = 1;
 	
 	for (uint i = 0; i < mesh->textures.size(); i++) {
 		glActiveTexture(GL_TEXTURE0 + i);
@@ -73,17 +78,19 @@ void draw_mesh(Mesh *mesh, Shader_Prog shader) {
 		char number_str[16] = { 0 };
 		const char *type_name = mesh->textures[i].type;
 		
-		if (strcmp(type_name, "texture_diffuse") == 0) {
+		if (strcmp(type_name, DIFFUSE_TEXTURE_UNIFORM) == 0) {
 			snprintf(number_str, sizeof(number_str), "%d", num_diffuse++);
-		} else if (strcmp(type_name, "texture_specular") == 0) {
+		} else if (strcmp(type_name, SPECULAR_TEXTURE_UNIFORM) == 0) {
 			snprintf(number_str, sizeof(number_str), "%d", num_spec++);
+		} else if (strcmp(type_name, NORMALS_TEXTURE_UNIFORM) == 0) {
+			snprintf(number_str, sizeof(number_str), "%d", num_norm++);
 		}
 		
 		char final_name[64] = "";
 		strlcat(final_name, type_name, sizeof(final_name));
 		strlcat(final_name, number_str, sizeof(final_name));
 		
-		//printf("[DEBUG] Final Shader Texture Uniform Name: %s\n", final_name);
+		// printf("[DEBUG] Final Shader Texture Uniform Name: %s\n", final_name);
 		
 		set_shader_int(shader, final_name, i);
 		glBindTexture(GL_TEXTURE_2D, mesh->textures[i].loaded_tex);
@@ -104,6 +111,7 @@ void draw_model(Model *model, Shader_Prog shader) {
 static std::vector<MeshTexture> load_aimaterial_textures(Model *model, aiMaterial *mat, aiTextureType type, const char *type_name) {
 	std::vector<MeshTexture> textures;
 	
+	printf("[DEBUG] Texture count for %s: %d\n", type_name, mat->GetTextureCount(type));
 	for (uint i = 0; i < mat->GetTextureCount(type); i++) {
 		aiString texture_file_name;
 		mat->GetTexture(type, i, &texture_file_name);
@@ -178,14 +186,19 @@ static Mesh process_aimesh(Model *model, aiMesh *ai_mesh, const aiScene *scene) 
 	if (ai_mesh->mMaterialIndex >= 0) { // Has Materials?
 		aiMaterial *material = scene->mMaterials[ai_mesh->mMaterialIndex];
 		
-		std::vector<MeshTexture> diffuse_textures = load_aimaterial_textures(model, material, aiTextureType_DIFFUSE, "texture_diffuse");
+		std::vector<MeshTexture> diffuse_textures = load_aimaterial_textures(model, material, aiTextureType_DIFFUSE, DIFFUSE_TEXTURE_UNIFORM);
 		for (uint i = 0; i < diffuse_textures.size(); i++) {
 			textures.push_back(diffuse_textures[i]);
 		}
 		
-		std::vector<MeshTexture> specular_textures = load_aimaterial_textures(model, material, aiTextureType_SPECULAR, "specular_diffuse");
+		std::vector<MeshTexture> specular_textures = load_aimaterial_textures(model, material, aiTextureType_SPECULAR, SPECULAR_TEXTURE_UNIFORM);
 		for (uint i = 0; i < specular_textures.size(); i++) {
 			textures.push_back(specular_textures[i]);
+		}
+		
+		std::vector<MeshTexture> normal_textures = load_aimaterial_textures(model, material, aiTextureType_NORMALS, NORMALS_TEXTURE_UNIFORM);
+		for (uint i = 0; i < normal_textures.size(); i++) {
+			textures.push_back(normal_textures[i]);
 		}
 	}
 	

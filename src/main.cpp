@@ -13,9 +13,6 @@
 #include "util.h"
 #include "mesh.h"
 
-#define TEST_OBJ_PARSER
-#include "obj_parser.hpp"
-
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 
@@ -59,7 +56,7 @@ int main() {
 	glDepthFunc(GL_LEQUAL);
 	
 	Model backpack;
-	assert(load_model(&backpack, "./car.obj") == 0);
+	assert(load_model(&backpack, "./backpack_model/backpack.obj") == 0);
 	
 	Vert_Shader vert_shader = create_shader_from_file("./src/shaders/main.vert", GL_VERTEX_SHADER);
 	Frag_Shader frag_shader = create_shader_from_file("./src/shaders/main.frag", GL_FRAGMENT_SHADER);
